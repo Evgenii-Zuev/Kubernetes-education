@@ -1,1 +1,1 @@
-# Kubernetes_education
+# See README in task folder
