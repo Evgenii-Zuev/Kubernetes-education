@@ -1,0 +1,44 @@
+kubectl create ns prod -o yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: "2022-04-04T07:26:40Z"
+  labels:
+    kubernetes.io/metadata.name: prod
+  name: prod
+  resourceVersion: "381715"
+  uid: 2b88b2fd-a5ec-4536-863e-aa18eb907ff6
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+  
+kubectl get ns
+
+kubectl get sa prod-admin --namespace prod -o yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2022-04-04T07:42:05Z"
+  name: prod-admin
+  namespace: prod
+  resourceVersion: "382510"
+  uid: e21e38eb-4774-4566-b293-eb2a065d045e
+secrets:
+- name: prod-admin-token-94xdx
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prod-admin
+  namespace: prod
+subjects:
+- kind: User
+  name: prod-admin
+  namespace: prod
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: admin
+  apiGroup: rbac.authorization.k8s.io

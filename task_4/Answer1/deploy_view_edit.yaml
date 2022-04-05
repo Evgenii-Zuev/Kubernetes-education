@@ -1,0 +1,59 @@
+apiVersion: rbac.autorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deploy_view
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: deploy_view
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: deploy_view
+  apiGroup: rbac.autorization.k8s.io
+---
+apiVersion: rbac.autorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deploy_view
+  namespace: default
+rules:
+  - apiGroups: ["*"]
+    resources: ["deployments"]
+	verbs: [view, list, get]
+  - apiGroups: ["*"]
+    resources: ["pods"]
+	verbs: [view, get, list]
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+	verbs: [view, get, list]
+---
+apiVersion: rbac.autorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deploy_edit
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: deploy_edit
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: deploy_edit
+  apiGroup: rbac.autorization.k8s.io
+---
+apiVersion: rbac.autorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deploy_edit
+  namespace: default
+rules:
+  - apiGroups: ["*"]
+    resources: ["deployments"]
+	verbs: ["*"]
+  - apiGroups: ["*"]
+    resources: ["pods"]
+	verbs: ["*"]
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+	verbs: ["*"]	

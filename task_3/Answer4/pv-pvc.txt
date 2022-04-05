@@ -1,0 +1,100 @@
+Установка nfs server
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo apt install nfs-common
+
+sudo mkdir /srv/nfs/kubedata -p
+sudo chown nobody:nogroup /srv/nfs/kubedata/
+
+Настроим экспорт
+sudo nano /etc/exports
+Добавим стороку
+/srv/nfs/kubedata    *(rw,sync,no_subtree_check,no_root_squash,no_all_squash,insecure)
+
+Запустим, проверим
+sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
+sudo systemctl status nfs-server
+
+Установим nfs провисионер как helm chart
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm repo update
+
+helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+              --set nfs.server=192.168.1.57 \
+			  --set nfs.path=/srv/nfs/kubedata
+			  
+создадим pvc-nfs.yaml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvctest
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Mi
+
+запустим	  
+kubectl create -f pvc-nfs.yaml
+
+создадим busybox-pv-nfs.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  volumes:
+  - name: myvol
+    persistentVolumeClaim:
+      claimName: pvctest
+  containers:
+  - image: busybox
+    name: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "sleep 600"]
+    volumeMounts:
+    - name: myvol
+      mountPath: /data
+	  
+запустим
+kubectl create -f busybox-pv-nfs.yaml
+
+подключимся к поду и создадим файл
+kubectl exec -it busybox /bin/sh
+cd /data
+echo "Create file for the Test" > Test_file.txt
+
+проверим на хосте появление файла. 
+/srv/nfs/kubedata/default-pvctest-pvc-22b2831a-db41-4272-859d-3ff0ea95f0e3
+
+дальше будем удалять поды
+kubectl delete pod busybox
+удаляем деплой
+PS C:\Users\Zuevs\Kubernetes\task_3> kubectl get deploy
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+app-a                             1/1     1            1           5d1h
+app-a-canary                      1/1     1            1           5d1h
+minio                             1/1     1            1           4d23h
+nfs-subdir-external-provisioner   1/1     1            1           96m
+PS C:\Users\Zuevs\Kubernetes\task_3> kubectl delete deploy nfs-subdir-external-provisioner
+deployment.apps "nfs-subdir-external-provisioner" deleted
+
+проверяем
+PS C:\Users\Zuevs\Kubernetes\task_3> kubectl get deploy
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+app-a          1/1     1            1           5d1h
+app-a-canary   1/1     1            1           5d1h
+minio          1/1     1            1           4d23h
+PS C:\Users\Zuevs\Kubernetes\task_3> kubectl get pods
+NAME                          READY   STATUS    RESTARTS        AGE
+app-a-6dbbcfdbb7-tn6lv        1/1     Running   3 (6h11m ago)   5d1h
+app-a-canary-ff49b764-757tl   1/1     Running   3 (6h11m ago)   5d1h
+minio-94fd47554-gqqb7         1/1     Running   3 (6h11m ago)   4d23h
+
+на хосте файл остался
+ll /srv/nfs/kubedata/default-pvctest-pvc-22b2831a-db41-4272-859d-3ff0ea95f0e3

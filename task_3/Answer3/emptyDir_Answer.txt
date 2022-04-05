@@ -1,0 +1,41 @@
+Создадим деплоймент emptyDir
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+		  protocol: TCP
+	    volumeMounts:
+            - name: foo
+              mountPath: "/app/foo"
+      volumes:
+        - name: foo
+          emptyDir: {}
+
+выполним и проверим, что получилось		  
+kubectl apply -f emptyDir.yaml -o yaml
+kubectl describe deploy nginx-deployment
+
+для баловства и запоминания заменим имидж
+kubectl set image deployment/nginx-deployment nginx=nginx:1.91 --record
+
+при удалении деплоймента все данные в директории уничтожаются.
+если emptyDir назначить в каталог с содержимым, то всё содержимое будет уничтожено.
+это стоит иметь в виду и проверять наличие файлов/каталогов в emptyDir до его деплоймента
